@@ -1,0 +1,10 @@
+---
+logrotate_configs:
+  - nginx
+
+nginx_logrotate_user: "root"
+nginx_logrotate_uid: 0
+nginx_logrotate_group: "srvadmin"
+nginx_logrotate_path: "/srv/logs/nginx/*.log"
+nginx_logrotate_enabled: true
+

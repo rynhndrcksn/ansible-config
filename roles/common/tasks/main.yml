@@ -15,6 +15,7 @@
       - curl
       - debian-goodies
       - git
+      - logrotate
       - rsync
       - vim
     state: present

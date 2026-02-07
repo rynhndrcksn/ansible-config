@@ -1,1 +1,9 @@
+---
+logrotate_configs:
+  - nginx
 
+nginx_logrotate_user: "nginx101"
+nginx_logrotate_uid: 101
+nginx_logrotate_group: "netdev"
+nginx_logrotate_path: "/srv/logs/nginx/*.log"
+nginx_logrotate_enabled: true

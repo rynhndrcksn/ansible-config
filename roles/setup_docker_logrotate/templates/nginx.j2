@@ -1,0 +1,17 @@
+{{ nginx_logrotate_path | default("/var/log/nginx/*.log") }} {
+    daily
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 0640 {{ nginx_logrotate_user | default("root") }} {{ nginx_logrotate_group | default("root") }}
+    {% if nginx_logrotate_user is defined and nginx_logrotate_group is defined %}
+    su {{ nginx_logrotate_user }} {{ nginx_logrotate_group }}
+    {% endif %}
+    sharedscripts
+    postrotate
+      docker compose -f /srv/docker-compose.yml exec nginx nginx -s reopen || true
+    endscript
+}
+
