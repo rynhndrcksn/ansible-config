@@ -149,6 +149,17 @@
     group: root
     mode: '0644'
 
+# Just using static content because this should never change.
+- name: Enable APT periodic unattended upgrades
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    owner: root
+    group: root
+    mode: '0644'
+
 - name: Enable and start unattended-upgrades service
   ansible.builtin.systemd:
     name: unattended-upgrades
