@@ -3,6 +3,8 @@
 This Ansible project provides a modular and extensible framework to automate the provisioning, hardening, and management of Debian servers.
 It leverages best practices to ensure consistency, security, and maintainability in your infrastructure automation.
 
+Note: This project makes assumptions that it will be ran again Debian based operating systems.
+
 ## Overview
 
 The project includes roles and playbooks to:
