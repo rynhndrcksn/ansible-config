@@ -1,0 +1,61 @@
+---
+
+- name: Ensure admin group exists
+  ansible.builtin.group:
+    name: admin
+    state: present
+
+- name: Ensure srvadmin group exists
+  ansible.builtin.group:
+    name: srvadmin
+    state: present
+
+- name: Manage admin user accounts
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    password: "{{ item.password }}"
+    groups: "srvadmin,admin,sudo"
+    append: true
+    shell: /bin/bash
+    create_home: true
+    state: "{{ item.state | default('absent') }}"
+  loop: "{{ users }}"
+
+- name: Create ssh directory for admin users
+  ansible.builtin.file:
+    path: "/home/{{ item.username }}/.ssh"
+    state: directory
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: '0700'
+  loop: "{{ users }}"
+
+- name: Deploy authorized keys
+  ansible.posix.authorized_keys:
+    user: "{{ item.username }}"
+    key: "{{ item.ssh_key_files | join('\n') }}"
+    state: "{{ item.state | default('absent') }}"
+  loop: "{{ users }}"
+  when: item.state | default('absent') == 'present'
+
+- name: Deploy custom bash file
+  ansible.builtin.copy:
+    src: "{{ item.custom_bash_file }}"
+    dest: "/home/{{ item.username }}/.bash_aliases"
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: '0644'
+  loop: "{{ users }}"
+  when:
+    - item.state | default('absent') == 'present'
+    - item.custom_bash_file is defined and item.custom_bash_file | length > 0
+
+- name: Configure sudoers for admin users
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/{{ item.username }}"
+    content: "{{ item.username }} ALL=(ALL) ALL\n"
+    owner: root
+    group: root
+    mode: '0440'
+  loop: "{{ users }}"
+

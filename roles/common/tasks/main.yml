@@ -1,5 +1,7 @@
 ---
 
+# Server setup
+
 - name: Ensure Ansible remote_tmp directory exists with correct permissions
   ansible.builtin.file:
     path: /root/.ansible/tmp
@@ -15,11 +17,43 @@
       - curl
       - debian-goodies
       - git
+      - hx
       - logrotate
       - rsync
       - vim
     state: present
     update_cache: true
+
+- name: Ensure srvadmin group exists
+  ansible.builtin.group:
+    name: srvadmin
+    state: present
+
+- name: Configure /srv directory permissions
+  ansible.builtin.file:
+    path: /srv
+    state: directory
+    owner: root
+    group: srvadmin
+    mode: '2775'
+
+- name: Set timezone
+  ansible.builtin.timezone:
+    name: "UTC"
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Ensure hostname is resolvable in /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1 {{ ([inventory_hostname] + (host_aliases | default([]))) | join(' ') }}"
+    state: present
+    backup: true
+
+# Server hardening
 
 - name: Disable SSH root login and password authentication
   ansible.builtin.template:
@@ -29,55 +63,6 @@
     group: root
     mode: '0644'
   notify: Restart ssh
-
-- name: Ensure secondary 'admin' group exists
-  ansible.builtin.group:
-    name: admin
-    state: present
-
-- name: Ensure secondary 'srvadmin' group exists
-  ansible.builtin.group:
-    name: srvadmin
-    state: present
-
-- name: Create admin user with sudo privileges
-  ansible.builtin.user:
-    name: "{{ vault_admin_user }}"
-    groups: srvadmin,admin,sudo
-    append: true
-    shell: /bin/bash
-    password: "{{ vault_admin_password }}"
-    create_home: true
-    state: present
-
-- name: Create ssh directory for admin user
-  ansible.builtin.file:
-    path: "/home/{{ vault_admin_user }}/.ssh"
-    state: directory
-    owner: "{{ vault_admin_user }}"
-    group: "{{ vault_admin_user }}"
-    mode: '0700'
-
-- name: Deploy authorized_keys for admin user
-  ansible.builtin.authorized_key:
-    user: "{{ vault_admin_user }}"
-    key: "{{ vault_admin_ssh_public_key }}"
-
-- name: Configure sudoers for admin user
-  ansible.builtin.copy:
-    dest: "/etc/sudoers.d/{{ vault_admin_user }}"
-    content: "{{ vault_admin_user }} ALL=(ALL) ALL\n"
-    owner: root
-    group: root
-    mode: '0440'
-
-- name: Configure /srv directory permissions
-  ansible.builtin.file:
-    path: /srv
-    state: directory
-    owner: root
-    group: srvadmin
-    mode: '2775'
 
 - name: Install fail2ban
   ansible.builtin.apt:
@@ -117,21 +102,7 @@
   community.general.ufw:
     state: enabled
 
-- name: Set timezone
-  ansible.builtin.timezone:
-    name: "UTC"
-
-- name: Set hostname
-  ansible.builtin.hostname:
-    name: "{{ inventory_hostname }}"
-
-- name: Ensure hostname is resolvable in /etc/hosts
-  ansible.builtin.lineinfile:
-    path: /etc/hosts
-    regexp: '^127\.0\.1\.1'
-    line: "127.0.1.1 {{ ([inventory_hostname] + (host_aliases | default([]))) | join(' ') }}"
-    state: present
-    backup: true
+# Enable unattended upgrades
 
 - name: Install unattended-upgrades and apt-listchanges
   ansible.builtin.apt:

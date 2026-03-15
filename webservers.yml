@@ -6,6 +6,7 @@
     - vault/secrets.yml
   roles:
     - { role: common, tags: ["common"] }
+    - { role: create_admin_users, tags: ["admin_users", "users"] }
     - { role: setup_docker, tags: ["docker", "containerization"] }
     - { role: setup_docker_logrotate, tags: ["docker", "logrotate"] }
     - { role: open_port_80, tags: ["firewall", "web"] }
