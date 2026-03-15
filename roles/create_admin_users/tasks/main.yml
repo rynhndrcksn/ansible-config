@@ -31,7 +31,7 @@
   loop: "{{ users }}"
 
 - name: Deploy authorized keys
-  ansible.posix.authorized_keys:
+  ansible.posix.authorized_key:
     user: "{{ item.username }}"
     key: "{{ item.ssh_key_files | join('\n') }}"
     state: "{{ item.state | default('absent') }}"
