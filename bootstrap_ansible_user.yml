@@ -1,0 +1,9 @@
+---
+
+# Create an Ansible user on server.
+
+- hosts: all
+  gather_facts: no
+  become: true
+  roles:
+    - { role: bootstrap_ansible_user, tags: ['users', 'ansible_user'] }

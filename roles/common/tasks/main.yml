@@ -24,19 +24,6 @@
     state: present
     update_cache: true
 
-- name: Ensure srvadmin group exists
-  ansible.builtin.group:
-    name: srvadmin
-    state: present
-
-- name: Configure /srv directory permissions
-  ansible.builtin.file:
-    path: /srv
-    state: directory
-    owner: root
-    group: srvadmin
-    mode: '2775'
-
 - name: Set timezone
   ansible.builtin.timezone:
     name: "UTC"

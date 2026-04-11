@@ -1,40 +1,64 @@
 ---
 
-- name: Ensure admin group exists
-  ansible.builtin.group:
-    name: admin
-    state: present
-
 - name: Ensure srvadmin group exists
   ansible.builtin.group:
     name: srvadmin
+    gid: 8000
     state: present
+
+- name: Configure /srv directory permissions
+  ansible.builtin.file:
+    path: /srv
+    state: directory
+    owner: root
+    group: srvadmin
+    mode: '2775'
+
+- name: Ensure admin groups exist
+  ansible.builtin.group:
+    name: "{{ item.username }}"
+    gid: "{{ item.gid | default(omit) }}"
+    state: present
+  loop: "{{ users }}"
 
 - name: Manage admin user accounts
   ansible.builtin.user:
     name: "{{ item.username }}"
     password: "{{ item.password }}"
-    groups: "srvadmin,admin,sudo"
+    uid: "{{ item.uid | default(omit) }}"
+    group: "{{ item.username }}"
+    groups: "srvadmin,sudo"
     append: true
     shell: /bin/bash
     create_home: true
     state: "{{ item.state | default('absent') }}"
   loop: "{{ users }}"
 
-- name: Create ssh directory for admin users
+- name: Ensure proper home directory permissions
   ansible.builtin.file:
-    path: "/home/{{ item.username }}/.ssh"
-    state: directory
+    path: "/home/{{ item.username }}"
     owner: "{{ item.username }}"
     group: "{{ item.username }}"
-    mode: '0700'
+    recurse: yes
+    state: directory
   loop: "{{ users }}"
+  when: item.state | default('absent') == 'present'
+
+# - name: Create ssh directory for admin users
+#   ansible.builtin.file:
+#     path: "/home/{{ item.username }}/.ssh"
+#     state: directory
+#     owner: "{{ item.username }}"
+#     group: "{{ item.username }}"
+#     mode: '0700'
+#   loop: "{{ users }}"
 
 - name: Deploy authorized keys
   ansible.posix.authorized_key:
     user: "{{ item.username }}"
     key: "{{ item.ssh_key_files | join('\n') }}"
     state: "{{ item.state | default('absent') }}"
+    manage_dir: true
   loop: "{{ users }}"
   when: item.state | default('absent') == 'present'
 
@@ -54,8 +78,7 @@
   ansible.builtin.copy:
     dest: "/etc/sudoers.d/{{ item.username }}"
     content: "{{ item.username }} ALL=(ALL) ALL\n"
-    owner: root
-    group: root
     mode: '0440'
+    validate: '/usr/sbin/visudo -cf %s'
   loop: "{{ users }}"
 
