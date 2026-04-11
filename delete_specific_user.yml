@@ -1,0 +1,19 @@
+---
+
+# Utility playbook to delete a specific user from every specified node.
+
+- name: Utility - Delete a specific user
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure taarget_user variable is provided
+      ansible.builtin.fail:
+        msg: "ERROR: you must provide a username! Usage: ansible-playbook delete_specific_user.yml -e 'target_user=<name>'"
+      when: target_user is undefined or target_user | length == 0
+
+    - name: Forcefully remove the specified user and their home directory
+      ansible.builtin.user:
+        name: "{{ target_user }}"
+        state: absent
+        remove: yes
+        force: yes
