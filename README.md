@@ -1,14 +1,12 @@
-# Ansible Debian Configuration
+# Ansible Configuration
 
-This Ansible project provides a modular and extensible framework to automate the provisioning, hardening, and management of Debian servers.
-It leverages best practices to ensure consistency, security, and maintainability in your infrastructure automation.
-
-Note: This project makes assumptions that it will be ran again Debian based operating systems.
+This Ansible project provides a modular and extensible framework to automate the provisioning, hardening, and management of (primarily Debian) servers.
 
 ## Overview
 
 The project includes roles and playbooks to:
 
+- Create a dedicated Ansible user
 - Configure and secure system access
 - Manage users and permissions
 - Harden SSH and firewall settings
@@ -48,7 +46,6 @@ ansible-galaxy collection list
 - User management with enforced password policies
 - Package and service management tailored for Debian-based systems
 - Automated system updates with service restarts and conditional reboots to keep servers up-to-date and secure
-- Podman installation and configuration for rootless container management, including user setup, and systemd integration
 
 ## Getting Started
 
