@@ -6,9 +6,9 @@
     gid: 8000
     state: present
 
-- name: Configure /srv directory permissions
+- name: Configure /srv/services directory permissions
   ansible.builtin.file:
-    path: /srv
+    path: /srv/services
     state: directory
     owner: root
     group: srvadmin
