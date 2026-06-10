@@ -44,15 +44,6 @@
   loop: "{{ users }}"
   when: item.state | default('absent') == 'present'
 
-# - name: Create ssh directory for admin users
-#   ansible.builtin.file:
-#     path: "/home/{{ item.username }}/.ssh"
-#     state: directory
-#     owner: "{{ item.username }}"
-#     group: "{{ item.username }}"
-#     mode: '0700'
-#   loop: "{{ users }}"
-
 - name: Deploy authorized keys
   ansible.posix.authorized_key:
     user: "{{ item.username }}"
