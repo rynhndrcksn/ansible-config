@@ -1,72 +1,44 @@
 ---
 
-- name: Create podman group if needed
+- name: Create Podman group
   ansible.builtin.group:
     name: "{{ vault_podman_user }}"
+    gid: "{{ vault_podman_gid | default(omit) }}"
     state: present
 
-- name: Ensure secondary 'srvadmin' group exists
-  ansible.builtin.group:
-    name: srvadmin
-    state: present
-
-- name: Create podman user with sudo privileges
+- name: Create podman user (locked password, no SSH, no sudo)
   ansible.builtin.user:
-    name:  "{{ vault_podman_user }}"
+    name: "{{ vault_podman_user }}"
     group: "{{ vault_podman_user }}"
-    groups: srvadmin,sudo
-    append: true
+    uid: "{{ vault_podman_uid | default(omit) }}"
     shell: /bin/bash
-    password: "{{ vault_podman_password }}"
+    password: "!"
     create_home: true
     state: present
-
-- name: Create ssh directory for podman user
-  ansible.builtin.file:
-    path: "/home/{{ vault_podman_user }}/.ssh"
-    state: directory
-    owner: "{{ vault_podman_user }}"
-    group: "{{ vault_podman_user }}"
-    mode: '0700'
-
-- name: Deploy authorized_keys for podman user
-  ansible.builtin.authorized_key:
-    user: "{{ vault_podman_user }}"
-    key: "{{ vault_admin_ssh_public_key }}"
-
-- name: Configure sudoers for podman user
-  ansible.builtin.copy:
-    dest: "/etc/sudoers.d/{{ vault_podman_user }}"
-    content: "{{ vault_admin_user }} ALL=(ALL) ALL\n"
-    owner: root
-    group: root
-    mode: '0440'
 
 - name: Install Podman and dependencies
   ansible.builtin.apt:
     name:
       - fuse-overlayfs  # overlay support for rootless podman
-      - passt           # network support for rootless podman
+      - passt           # userspace network stack for rootless (replaces slirp4netns)
       - podman
-      - uidmap          # user namespace mapping
+      - uidmap          # user namespace UID mapping
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Ensure /etc/subuid entry for podman user
   ansible.builtin.lineinfile:
     path: /etc/subuid
     line: "{{ vault_podman_user }}:100000:65536"
-    create: yes
+    create: true
     state: present
-    validate: 'cat %s'
 
 - name: Ensure /etc/subgid entry for podman user
   ansible.builtin.lineinfile:
     path: /etc/subgid
     line: "{{ vault_podman_user }}:100000:65536"
-    create: yes
+    create: true
     state: present
-    validate: 'cat %s'
 
 - name: Ensure Podman config directory exists
   ansible.builtin.file:
@@ -74,7 +46,15 @@
     state: directory
     owner: "{{ vault_podman_user }}"
     group: "{{ vault_podman_user }}"
-    mode: "0700"
+    mode: "0755"
+
+- name: Ensure Quadlet unit directory exists
+  ansible.builtin.file:
+    path: "/home/{{ vault_podman_user }}/.config/containers/systemd"
+    state: directory
+    owner: "{{ vault_podman_user }}"
+    group: "{{ vault_podman_user }}"
+    mode: "0755"
 
 - name: Ensure Podman storage directory exists
   ansible.builtin.file:
@@ -91,25 +71,42 @@
     state: link
     force: true
 
-- name: Get podman user UID
+- name: Get podman user info
   ansible.builtin.getent:
     database: passwd
     key: "{{ vault_podman_user }}"
   register: podman_user_info
 
-- name: Configure /etc/containers/containers.conf for rootless podman
+- name: Configure containers.conf for rootless Podman
   ansible.builtin.template:
     src: containers.conf.j2
-    dest: /home/{{ vault_podman_user }}/.config/containers/containers.conf
-    owner: root
-    group: root
-    mode: '0644'
+    dest: "/home/{{ vault_podman_user }}/.config/containers/containers.conf"
+    owner: "{{ vault_podman_user }}"
+    group: "{{ vault_podman_user }}"
+    mode: "0644"
   vars:
     podman_user_info: "{{ podman_user_info }}"
   notify: Reload podman services
 
-- name: Enable and start podman socket
+# Linger keeps the user's systemd --user instance alive with no active session.
+# The `creates` check makes this idempotent without a separate stat task.
+- name: Enable linger for podman user
+  ansible.builtin.command:
+    cmd: "loginctl enable-linger {{ vault_podman_user }}"
+    creates: "/var/lib/systemd/linger/{{ vault_podman_user }}"
+
+# The socket must be managed as a user unit, not a system unit.
+# XDG_RUNTIME_DIR and DBUS_SESSION_BUS_ADDRESS must be set explicitly when
+# becoming a non-login user - systemd won't have populated them for this session.
+- name: Enable and start podman user socket
   ansible.builtin.systemd:
     name: podman.socket
     state: started
     enabled: true
+    scope: user
+  become: true
+  become_user: "{{ vault_podman_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_info.ansible_facts.getent_passwd[vault_podman_user][1] }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ podman_user_info.ansible_facts.getent_passwd[vault_podman_user][1] }}/bus"
+

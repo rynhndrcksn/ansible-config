@@ -2,5 +2,10 @@
 
 - name: Reload podman services
   ansible.builtin.systemd:
-    name: podman.socket
-    state: restarted
+    daemon_reload: true
+    scope: user
+  become: true
+  become_user: "{{ vault_podman_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_info.ansible_facts.getent_passwd[vault_podman_user][1] }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ podman_user_info.ansible_facts.getent_passwd[vault_podman_user][1] }}/bus"
