@@ -1,9 +1,4 @@
 ---
-logrotate_configs:
-  - nginx
+containerd_data_root: /srv/containerd
+docker_data_root: /srv/docker
 
-nginx_logrotate_user: "nginx101"
-nginx_logrotate_uid: 101
-nginx_logrotate_group: "netdev"
-nginx_logrotate_path: "/srv/logs/nginx/*.log"
-nginx_logrotate_enabled: true

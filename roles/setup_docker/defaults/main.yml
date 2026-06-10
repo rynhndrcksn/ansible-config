@@ -1,0 +1,9 @@
+# Default data roots follow FHS conventions (/var/lib is for runtime state).
+# Override these in group_vars or host_vars when the target server has an
+# undersized /var partition (e.g. Debian "Server" installs with separate /var).
+
+containerd_data_root: /var/lib/containerd
+docker_data_root: /var/lib/docker
+docker_log_driver: json-file
+docker_log_max_size: 10m
+docker_log_max_file: "5"

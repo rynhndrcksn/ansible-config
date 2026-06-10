@@ -1,7 +1,7 @@
-# Managed by Ansible.
+# Managed by Ansible. Do not edit manually.
 
 version = 2
-root = "/srv/containerd"
+root = "{{ containerd_data_root }}"
 state = "/run/containerd"
 
 [plugins."io.containerd.grpc.v1.cri"]
@@ -11,14 +11,13 @@ state = "/run/containerd"
   runtime_type = "io.containerd.runc.v2"
 
 [plugins."io.containerd.snapshotter.v1.overlayfs"]
-  root = "/srv/containerd/io.containerd.snapshotter.v1.overlayfs"
+  root = "{{ containerd_data_root }}/io.containerd.snapshotter.v1.overlayfs"
 
 [plugins."io.containerd.content.v1.content"]
-  root = "/srv/containerd/io.containerd.content.v1.content"
+  root = "{{ containerd_data_root }}/io.containerd.content.v1.content"
 
 [plugins."io.containerd.image.v1.store"]
-  root = "/srv/containerd/io.containerd.image.v1.store"
+  root = "{{ containerd_data_root }}/io.containerd.image.v1.store"
 
 [plugins."io.containerd.metadata.v1.bolt"]
-  root = "/srv/containerd/io.containerd.metadata.v1.bolt"
-
+  root = "{{ containerd_data_root }}/io.containerd.metadata.v1.bolt"

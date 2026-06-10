@@ -48,9 +48,9 @@
     state: present
     update_cache: true
 
-- name: Ensure containerd data-root directory exists
+- name: Ensure containerd data root directory exists
   ansible.builtin.file:
-    path: /srv/containerd
+    path: "{{ containerd_data_root }}"
     state: directory
     owner: root
     group: root
@@ -65,14 +65,6 @@
     mode: '0644'
   notify: Restart containerd and Docker
 
-- name: Ensure Docker data-root directory exists
-  ansible.builtin.file:
-    path: /srv/docker
-    state: directory
-    owner: root
-    group: root
-    mode: '0711'
-
 - name: Create /etc/docker directory
   ansible.builtin.file:
     path: /etc/docker
@@ -81,16 +73,21 @@
     group: root
     mode: '0755'
 
-- name: Configure Docker daemon data-root
-  ansible.builtin.copy:
+- name: Ensure Docker data root directory exists
+  ansible.builtin.file:
+    path: "{{ docker_data_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0711'
+
+- name: Configure Docker daemon
+  ansible.builtin.template:
+    src: daemon.json.j2
     dest: /etc/docker/daemon.json
     owner: root
     group: root
     mode: '0644'
-    content: |
-      {
-        "data-root": "/srv/docker"
-      }
   notify: Restart containerd and Docker
 
 - name: Ensure Docker service is enabled and started
@@ -107,4 +104,3 @@
 
 - name: Reset SSH connection to apply group changes
   ansible.builtin.meta: reset_connection
-
