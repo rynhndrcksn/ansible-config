@@ -8,6 +8,14 @@
     - { role: common, tags: ["common"] }
     - { role: create_admin_users, tags: ["admin_users", "users"] }
     - { role: setup_docker, tags: ["docker", "containerization"] }
-    - { role: open_port_80, tags: ["firewall", "web"] }
-    - { role: open_port_443, tags: ["firewall", "web"] }
+    - { role: open_port_80, tags: ["firewall", "ports"] }
+    - { role: open_port_443, tags: ["firewall", "ports"] }
+
+- name: Configure Forgejo (production only)
+  hosts: hetz-ryanjh
+  become: true
+  vars_files:
+    - vault/secrets.yml
+  roles:
+    - { role: install_forgejo, tags: ["forgejo", "services"] }
 

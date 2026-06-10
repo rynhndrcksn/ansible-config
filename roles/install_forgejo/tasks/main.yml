@@ -1,0 +1,25 @@
+---
+
+- name: Ensure /srv/services/forgejo directory exists
+  ansible.builtin.file:
+    path: /srv/services/forgejo
+    state: directory
+    mode: '0755'
+
+- name: Deploy .env.sample
+  ansible.builtin.template:
+    src: env.sample.j2
+    dest: /srv/services/forgejo/.env.sample
+    mode: '0640'
+
+- name: Open Forgejo SSH port in UFW
+  community.general.ufw:
+    rule: allow
+    port: "{{ vault_forgejo_ssh_port | default('2222') }}"
+    proto: tcp
+
+- name: Ensure proxy Docker network exists
+  community.docker.docker_network:
+    name: proxy
+    state: present
+
