@@ -12,7 +12,7 @@ graphroot = "/home/podman/.local/share/containers/storage"
 mount_program = "/usr/bin/fuse-overlayfs"
 
 [engine]
-cgroup_manager = "cgroupfs"
+cgroup_manager = "systemd"
 mount_flags = "nodev, noexec, nosuid"
 default_capabilities = [
   "CAP_CHOWN",
